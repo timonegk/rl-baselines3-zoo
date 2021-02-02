@@ -10,6 +10,8 @@ import seaborn
 import torch as th
 from stable_baselines3.common.utils import set_random_seed
 
+import deep_kick
+
 # Register custom envs
 import utils.import_envs  # noqa: F401 pytype: disable=import-error
 from utils.exp_manager import ExperimentManager
