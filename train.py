@@ -45,30 +45,33 @@ if __name__ == "__main__":  # noqa: C901
     parser.add_argument("--seed", help="Random generator seed", type=int, default=-1)
     parser.add_argument("--vec-env", help="VecEnv type", type=str, default="dummy", choices=["dummy", "subproc"])
     parser.add_argument("--n-trials", help="Number of trials for optimizing hyperparameters", type=int, default=10)
-    parser.add_argument(
+    
+    hpo_group = parser.add_argument_group('Hyperparameter Optimization', 'Optimize the hyperparameters during the training')
+    hpo_group.add_argument(
         "-optimize", "--optimize-hyperparameters", action="store_true", default=False, help="Run hyperparameters search"
     )
-    parser.add_argument("--n-jobs", help="Number of parallel jobs when optimizing hyperparameters", type=int, default=1)
-    parser.add_argument(
+    hpo_group.add_argument("--n-jobs", help="Number of parallel jobs when optimizing hyperparameters", type=int, default=1)
+    hpo_group.add_argument(
         "--sampler",
         help="Sampler to use when optimizing hyperparameters",
         type=str,
         default="tpe",
         choices=["random", "tpe", "skopt"],
     )
-    parser.add_argument(
+    hpo_group.add_argument(
         "--pruner",
         help="Pruner to use when optimizing hyperparameters",
         type=str,
         default="median",
         choices=["halving", "median", "none"],
     )
-    parser.add_argument("--n-startup-trials", help="Number of trials before using optuna sampler", type=int, default=10)
-    parser.add_argument("--n-evaluations", help="Number of evaluations for hyperparameter optimization", type=int, default=20)
-    parser.add_argument(
+    hpo_group.add_argument("--n-startup-trials", help="Number of trials before using optuna sampler", type=int, default=10)
+    hpo_group.add_argument("--n-evaluations", help="Number of evaluations for hyperparameter optimization", type=int, default=20)
+    hpo_group.add_argument(
         "--storage", help="Database storage path if distributed optimization should be used", type=str, default=None
     )
-    parser.add_argument("--study-name", help="Study name for distributed optimization", type=str, default=None)
+    hpo_group.add_argument("--study-name", help="Study name for distributed optimization", type=str, default=None)
+    
     parser.add_argument("--verbose", help="Verbose mode (0: no output, 1: INFO)", default=1, type=int)
     parser.add_argument(
         "--gym-packages",
