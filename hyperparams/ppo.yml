@@ -14,6 +14,8 @@ WolfgangBulletEnv-v1:
   clip_range: 0.2
   use_sde: False
   vf_coef: 0.210933418438296
+  callback:
+    - deep_kick.callbacks.RewardLogCallback
 
 WolfgangDummyEnv-v1:
   normalize: true
