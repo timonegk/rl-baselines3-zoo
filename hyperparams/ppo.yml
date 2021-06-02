@@ -4,6 +4,7 @@ WolfgangBulletEnv-v1:
   n_timesteps: !!float 1e7
   policy: 'MlpPolicy'
   policy_kwargs: "dict(net_arch=[dict(pi=[512,512], vf=[512,512])], activation_fn=nn.ReLU, log_std_init=-2.305259, distribution_type='FixedVarDiagGaussian')"
+  set_action_bias_from_env: True
   n_steps: 256
   batch_size: 32
   gae_lambda: 0.8
