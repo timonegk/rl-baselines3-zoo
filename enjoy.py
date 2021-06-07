@@ -58,6 +58,7 @@ def main():  # noqa: C901
         "--env-kwargs", type=str, nargs="+", action=StoreDict, help="Optional keyword argument to pass to the env constructor"
     )
     parser.add_argument("--evaluate", action="store_true", default=False, help="Evaluate")
+    parser.add_argument("--eval-file", type=str, help="File for evaluation results")
     args = parser.parse_args()
 
     # Going through custom gym packages to let them register in the global registory
@@ -227,6 +228,15 @@ def main():  # noqa: C901
             values = [d[key] for d in eval_infos]
             print(f"Evaluation for {key}: {np.mean(values)} +/- {np.std(values)} "
                   f"(min: {np.min(values)}, max: {np.max(values)})")
+
+    if args.eval_file:
+        if os.path.isfile(args.eval_file):
+            print(f'not writing to existing file {args.eval_file}!')
+        else:
+            with open(args.eval_file, 'w') as f:
+                f.write(','.join(eval_infos[0].keys()) + '\n')
+                for i in eval_infos:
+                    f.write(','.join((str(v) for v in i.values())) + '\n')
 
     if args.verbose > 0 and len(successes) > 0:
         print(f"Success rate: {100 * np.mean(successes):.2f}%")
