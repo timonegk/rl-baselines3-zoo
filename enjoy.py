@@ -21,7 +21,9 @@ def main():  # noqa: C901
     parser.add_argument("--env", help="environment ID", type=str, default="CartPole-v1")
     parser.add_argument("-f", "--folder", help="Log folder", type=str, default="rl-trained-agents")
     parser.add_argument("--algo", help="RL Algorithm", default="ppo", type=str, required=False, choices=list(ALGOS.keys()))
-    parser.add_argument("-n", "--n-timesteps", help="number of timesteps", default=1000, type=int)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-n", "--n-timesteps", help="number of timesteps", default=1000, type=int)
+    group.add_argument("-e", "--n-episodes", help="number of episodes", type=int)
     parser.add_argument("--num-threads", help="Number of threads for PyTorch (-1 to use default)", default=-1, type=int)
     parser.add_argument("--n-envs", help="number of environments", default=1, type=int)
     parser.add_argument("--exp-id", help="Experiment ID (default: 0: latest, -1: no exp folder)", default=0, type=int)
@@ -166,10 +168,15 @@ def main():  # noqa: C901
     episode_reward = 0.0
     episode_rewards, episode_lengths = [], []
     ep_len = 0
+    episode_count = 0
+    timestep_count = 0
+    if args.n_episodes:
+        timestep_count = args.n_timesteps
     # For HER, monitor success rate
     successes = []
     try:
-        for _ in range(args.n_timesteps):
+        while args.n_episodes and episode_count < args.n_episodes or timestep_count < args.n_timesteps:
+            timestep_count += 1
             action, state = model.predict(obs, state=state, deterministic=deterministic)
             obs, reward, done, infos = env.step(action)
             if not args.no_render:
@@ -197,6 +204,7 @@ def main():  # noqa: C901
                     episode_reward = 0.0
                     ep_len = 0
                     state = None
+                    episode_count += 1
 
                 # Reset also when the goal is achieved when using HER
                 if done and infos[0].get("is_success") is not None:
