@@ -57,6 +57,7 @@ def main():  # noqa: C901
     parser.add_argument(
         "--env-kwargs", type=str, nargs="+", action=StoreDict, help="Optional keyword argument to pass to the env constructor"
     )
+    parser.add_argument("--evaluate", action="store_true", default=False, help="Evaluate")
     args = parser.parse_args()
 
     # Going through custom gym packages to let them register in the global registory
@@ -99,7 +100,7 @@ def main():  # noqa: C901
 
     off_policy_algos = ["qrdqn", "dqn", "ddpg", "sac", "her", "td3", "tqc"]
 
-    if algo in off_policy_algos:
+    if algo in off_policy_algos or args.evaluate:
         args.n_envs = 1
 
     set_random_seed(args.seed)
@@ -172,6 +173,7 @@ def main():  # noqa: C901
     timestep_count = 0
     if args.n_episodes:
         timestep_count = args.n_timesteps
+    eval_infos = []
     # For HER, monitor success rate
     successes = []
     try:
@@ -205,6 +207,8 @@ def main():  # noqa: C901
                     ep_len = 0
                     state = None
                     episode_count += 1
+                    if args.evaluate:
+                        eval_infos.append(infos[0].get('evaluation', None))
 
                 # Reset also when the goal is achieved when using HER
                 if done and infos[0].get("is_success") is not None:
@@ -217,6 +221,12 @@ def main():  # noqa: C901
 
     except KeyboardInterrupt:
         pass
+
+    if args.verbose > 0 and args.evaluate:
+        for key in eval_infos[0]:
+            values = [d[key] for d in eval_infos]
+            print(f"Evaluation for {key}: {np.mean(values)} +/- {np.std(values)} "
+                  f"(min: {np.min(values)}, max: {np.max(values)})")
 
     if args.verbose > 0 and len(successes) > 0:
         print(f"Success rate: {100 * np.mean(successes):.2f}%")
