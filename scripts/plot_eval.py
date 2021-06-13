@@ -23,7 +23,7 @@ parser.add_argument("--fontsize", help="Font size", type=int, default=14)
 parser.add_argument("-max", "--max-timesteps", help="Max number of timesteps to display", type=int)
 parser.add_argument("-x", "--x-axis", help="X-axis", choices=["steps", "episodes", "time"], type=str, default="steps")
 parser.add_argument("-y", "--y-axis", help="Y-axis", choices=["success", "reward"], type=str, default="reward")
-parser.add_argument("-w", "--episode-window", help="Rolling window size", type=int, default=100)
+parser.add_argument("-w", "--episode-window", help="Rolling window size", type=int, default=10)
 
 args = parser.parse_args()
 
@@ -36,7 +36,7 @@ x_axis = {"steps": X_TIMESTEPS, "episodes": X_EPISODES, "time": X_WALLTIME}[args
 x_label = {"steps": "Timesteps (in Million)", "episodes": "Episodes", "time": "Walltime (in hours)"}[args.x_axis]
 
 y_axis = {"success": "is_success", "reward": "r"}[args.y_axis]
-y_label = {"success": "Training Success Rate", "reward": "Training Episodic Reward"}[args.y_axis]
+y_label = {"success": "Training Success Rate", "reward": "Evaluation reward"}[args.y_axis]
 
 dirs = [
     os.path.join(log_path, folder)
@@ -44,38 +44,35 @@ dirs = [
     if (env in folder and os.path.isdir(os.path.join(log_path, folder)))
 ]
 
-for folder in dirs:
-    try:
-        data_frame = load_results(folder)
-    except LoadMonitorResultsError:
-        continue
+for folder in sorted(dirs):
+    npz = np.load(os.path.join(folder, 'evaluations.npz'))
+    timesteps = npz['timesteps']
+    results = npz['results']
     if args.max_timesteps is not None:
-        data_frame = data_frame[data_frame.l.cumsum() <= args.max_timesteps]
-    try:
-        y = np.array(data_frame[y_axis])
-    except KeyError:
-        print(f"No data available for {folder}")
-        continue
-    x, _ = ts2xy(data_frame, x_axis)
+        results = results[timesteps <= args.max_timesteps]
+        timesteps = timesteps[timesteps <= args.max_timesteps]
+
+    # Take mean for each of the evaluations
+    results = np.mean(results, axis=1)
 
     # Do not plot the smoothed curve at all if the timeseries is shorter than window size.
-    if x.shape[0] >= args.episode_window:
+    if timesteps.shape[0] >= args.episode_window:
         name = folder.split('/')[-1]
         # Compute and plot rolling mean with window of size args.episode_window
-        x, y_mean = window_func(x, y, args.episode_window, np.mean)
+        x, y_mean = window_func(timesteps, results, args.episode_window, np.mean)
         almost_there = np.where(y_mean >= 0.95*y_mean.max())[0][0]
         print(name, '– 5% Deviation of maximum is first reached at timestep', x[almost_there])
         plt.figure(y_label, figsize=args.figsize)
         plt.title(y_label, fontsize=args.fontsize)
         plt.xlabel(f"{x_label}", fontsize=args.fontsize)
         plt.ylabel(y_label, fontsize=args.fontsize)
-        plt.ylim(0, 40)
+        plt.ylim(0, 60)
         plt.plot(x / 1e6, y_mean, linewidth=2)
-        #plt.legend()
         plt.tight_layout()
         #plt.show()
-        plt.savefig(name)
-        plt.show()
+        plt.savefig(name + '_eval')
+        plt.close()
+        #plt.show()
 
 #plt.legend()
 #plt.tight_layout()
